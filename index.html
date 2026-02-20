@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Menu</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Our Menu</h1>
+  </header>
+
+  <main>
+    <div class="viewer-container">
+
+      <!-- PDF is loaded by script.js -->
+      <iframe
+        id="pdf-viewer"
+        title="Menu PDF"
+        allowfullscreen
+      ></iframe>
+
+      <!-- Shown when the PDF fails to load -->
+      <p id="pdf-fallback" class="fallback" hidden>
+        Menu preview not available. Click <strong>Download Menu</strong> to view the menu.
+      </p>
+
+      <div class="button-group">
+        <!-- Download button: triggers a file download -->
+        <button id="btn-download" class="btn btn-primary">Download Menu</button>
+
+        <!-- Fullscreen button: opens the PDF in a new tab -->
+        <button id="btn-fullscreen" class="btn btn-secondary">Open Fullscreen</button>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
