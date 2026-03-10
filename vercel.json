@@ -23,6 +23,10 @@
       "dest": "/api/update-status.js"
     },
     {
+      "src": "/counter",
+      "dest": "/public/counter.html"
+    },
+    {
       "handle": "filesystem"
     },
     {
