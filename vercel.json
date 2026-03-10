@@ -1,18 +1,46 @@
 {
-  "version": 2,
   "builds": [
     {
       "src": "api/**/*.js",
       "use": "@vercel/node"
     },
     {
-      "src": "public/**",
+      "src": "public/index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "public/counter.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "public/script.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "public/styles.css",
       "use": "@vercel/static"
     }
   ],
-  "rewrites": [
-    { "source": "/api/orders", "destination": "/api/orders.js" },
-    { "source": "/api/create-order", "destination": "/api/create-order.js" },
-    { "source": "/api/update-status", "destination": "/api/update-status.js" }
+  "routes": [
+    {
+      "src": "/api/orders",
+      "dest": "/api/orders.js"
+    },
+    {
+      "src": "/api/create-order",
+      "dest": "/api/create-order.js"
+    },
+    {
+      "src": "/api/update-status",
+      "dest": "/api/update-status.js"
+    },
+    {
+      "src": "/counter",
+      "dest": "/public/counter.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/index.html"
+    }
   ]
 }
