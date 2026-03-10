@@ -24,12 +24,8 @@
       "dest": "/api/update-status.js"
     },
     {
-      "src": "/counter",
-      "dest": "/public/counter.html"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/public/index.html"
+      "dest": "/$1"
     }
   ]
 }
