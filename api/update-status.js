@@ -2,13 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   'https://npiemdvpbihewhlfzyll.supabase.co',
-  'sb_secret_PB5bjLW6jCUaND8g_DvyEA_jKvH9oEO',
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
-    }
-  }
+  'sb_secret_PB5bjLW6jCUaND8g_DvyEA_jKvH9oEO'
 );
 
 module.exports = async (req, res) => {
