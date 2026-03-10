@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Counter Dashboard — Tree of Life Cafe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            cafe: {
+              green: '#2D5A27',
+              'green-light': '#4A7C43',
+              'green-dark': '#1B3B17',
+              beige: '#F5F0E8',
+              'beige-dark': '#E8DFD0',
+              cream: '#FFFDF7',
+            }
+          },
+          animation: {
+            'slide-in': 'slideIn 0.3s ease-out',
+            'pulse-once': 'pulseOnce 0.5s ease-out',
+          },
+          keyframes: {
+            slideIn: {
+              '0%': { opacity: '0', transform: 'translateX(-10px)' },
+              '100%': { opacity: '1', transform: 'translateX(0)' },
+            },
+            pulseOnce: {
+              '0%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.05)' },
+              '100%': { transform: 'scale(1)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-cafe-green-dark to-cafe-green text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold tracking-tight">Tree of Life Cafe</h1>
+            <p class="text-cafe-green-light text-xs font-medium">Counter Dashboard</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2 md:gap-3">
+          <div id="connection-status" class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-red-500/20 text-red-300">
+            <span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
+            <span class="hidden sm:inline">Disconnected</span>
+          </div>
+          
+          <button id="sound-toggle" onclick="toggleSound()" class="text-xs md:text-sm px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition font-medium flex items-center gap-1.5">
+            <svg id="sound-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+            <span class="hidden sm:inline">Sound: ON</span>
+          </button>
+          
+          <a href="/" class="text-xs md:text-sm px-3 py-1.5 rounded-full border border-white/30 hover:bg-white/10 transition font-medium">
+            <span class="hidden sm:inline">New Order</span>
+            <svg class="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Search & Filters -->
+  <div class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <!-- Search -->
+      <div class="relative flex-1">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" id="order-search" 
+          class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cafe-green focus:border-transparent outline-none"
+          placeholder="Search by name, phone, or order ID...">
+      </div>
+      
+      <!-- Filter Pills -->
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <button data-filter="all" class="filter-btn active px-4 py-2 rounded-xl text-sm font-medium bg-cafe-green text-white transition-all">
+          All
+        </button>
+        <button data-filter="New" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-gray-600 border border-gray-200 hover:border-cafe-green transition-all">
+          New
+        </button>
+        <button data-filter="Processing" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-gray-600 border border-gray-200 hover:border-cafe-green transition-all">
+          Processing
+        </button>
+        <button data-filter="Completed" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-gray-600 border border-gray-200 hover:border-cafe-green transition-all">
+          Completed
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="max-w-7xl mx-auto px-4 pb-4">
+    <div class="grid grid-cols-3 gap-3">
+      <div class="bg-white rounded-2xl shadow-sm p-4 text-center ring-1 ring-black/5">
+        <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <p id="stat-new" class="text-2xl font-bold text-red-600">0</p>
+        <p class="text-xs text-gray-500 font-medium">New</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm p-4 text-center ring-1 ring-black/5">
+        <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+          <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <p id="stat-processing" class="text-2xl font-bold text-yellow-600">0</p>
+        <p class="text-xs text-gray-500 font-medium">Processing</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm p-4 text-center ring-1 ring-black/5">
+        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <p id="stat-completed" class="text-2xl font-bold text-green-600">0</p>
+        <p class="text-xs text-gray-500 font-medium">Completed</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Orders -->
+  <div class="max-w-7xl mx-auto px-4 pb-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-bold text-gray-800">Active Orders</h2>
+      <span id="active-count" class="text-sm text-gray-500 font-medium">0 orders</span>
+    </div>
+    <div id="active-orders" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <!-- Order cards rendered by JS -->
+    </div>
+    <div id="no-active" class="hidden bg-white rounded-2xl shadow-sm p-12 text-center">
+      <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+      </div>
+      <p class="text-lg font-semibold text-gray-700">No active orders</p>
+      <p class="text-sm text-gray-400">New orders will appear here</p>
+    </div>
+  </div>
+
+  <!-- Completed Orders -->
+  <div class="max-w-7xl mx-auto px-4 pb-8">
+    <details class="group">
+      <summary class="flex items-center justify-between cursor-pointer select-none py-2">
+        <h2 class="text-lg font-bold text-gray-500 group-hover:text-gray-700 transition-colors">
+          Completed Orders <span id="completed-count" class="text-sm font-normal ml-2">(0)</span>
+        </h2>
+        <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </summary>
+      <div id="completed-orders" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-3">
+        <!-- Completed order cards -->
+      </div>
+    </details>
+  </div>
+
+  <!-- New Order Banner -->
+  <div id="new-order-banner" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50">
+    <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-bounce-subtle">
+      <span class="text-xl">🔔</span>
+      <span class="font-bold">NEW ORDER RECEIVED!</span>
+    </div>
+  </div>
+
+  <script>
+    let orders = [];
+    let soundEnabled = true;
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    const CAFE_WHATSAPP_NUMBER = '918826139339';
+
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playNotificationSound() {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        const now = audioCtx.currentTime;
+        [600, 800, 1000].forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.25, now + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.25);
+          osc.start(now + i * 0.12);
+          osc.stop(now + i * 0.12 + 0.25);
+        });
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('sound-toggle');
+      const icon = document.getElementById('sound-icon');
+      if (soundEnabled) {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>';
+        btn.classList.remove('opacity-60');
+      } else {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>';
+        btn.classList.add('opacity-60');
+      }
+    }
+
+    const socket = io();
+
+    socket.on('connect', () => {
+      const el = document.getElementById('connection-status');
+      el.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse"></span><span class="hidden sm:inline">Connected</span>';
+      el.className = 'flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-green-500/20 text-green-300';
+    });
+
+    socket.on('disconnect', () => {
+      const el = document.getElementById('connection-status');
+      el.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span><span class="hidden sm:inline">Disconnected</span>';
+      el.className = 'flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-red-500/20 text-red-300';
+    });
+
+    socket.on('new-order', (order) => {
+      orders.unshift(order);
+      renderOrders();
+      playNotificationSound();
+      showNewOrderBanner();
+    });
+
+    socket.on('order-status-updated', ({ id, status }) => {
+      const order = orders.find(o => o.id === id);
+      if (order) {
+        order.status = status;
+        renderOrders();
+      }
+    });
+
+    function showNewOrderBanner() {
+      const banner = document.getElementById('new-order-banner');
+      banner.classList.remove('hidden');
+      setTimeout(() => banner.classList.add('hidden'), 4000);
+    }
+
+    async function loadOrders() {
+      try {
+        const res = await fetch('/api/orders');
+        orders = await res.json();
+        renderOrders();
+      } catch (err) {
+        document.getElementById('active-orders').innerHTML =
+          '<div class="col-span-full bg-red-50 border border-red-200 text-red-700 rounded-2xl p-6 text-center font-medium">Failed to load orders. Is the server running?</div>';
+      }
+    }
+
+    async function updateStatus(orderId, status) {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          const order = orders.find(o => o.id === orderId);
+          if (order) {
+            order.status = status;
+            renderOrders();
+          }
+        }
+      } catch (err) {
+        alert('Failed to update order status');
+      }
+    }
+
+    function filterOrders(orders) {
+      let filtered = orders;
+
+      if (currentFilter !== 'all') {
+        filtered = filtered.filter(o => o.status === currentFilter);
+      }
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(o => 
+          o.customerName.toLowerCase().includes(q) ||
+          o.phone.includes(q) ||
+          o.id.toLowerCase().includes(q)
+        );
+      }
+
+      return filtered;
+    }
+
+    function renderOrders() {
+      const activeContainer = document.getElementById('active-orders');
+      const completedContainer = document.getElementById('completed-orders');
+      const noActive = document.getElementById('no-active');
+
+      const filteredOrders = filterOrders(orders);
+      const activeOrders = filteredOrders.filter(o => o.status !== 'Completed');
+      const completedOrders = filteredOrders.filter(o => o.status === 'Completed');
+
+      document.getElementById('stat-new').textContent = orders.filter(o => !o.status || o.status === 'New').length;
+      document.getElementById('stat-processing').textContent = orders.filter(o => o.status === 'Processing').length;
+      document.getElementById('stat-completed').textContent = orders.filter(o => o.status === 'Completed').length;
+
+      document.getElementById('active-count').textContent = `${activeOrders.length} order${activeOrders.length !== 1 ? 's' : ''}`;
+      document.getElementById('completed-count').textContent = `(${completedOrders.length})`;
+
+      if (activeOrders.length === 0) {
+        activeContainer.innerHTML = '';
+        noActive.classList.remove('hidden');
+      } else {
+        noActive.classList.add('hidden');
+        activeContainer.innerHTML = activeOrders.map(order => renderCard(order, false)).join('');
+      }
+
+      completedContainer.innerHTML = completedOrders.map(order => renderCard(order, true)).join('');
+    }
+
+    function renderCard(order, isCompleted) {
+      const time = new Date(order.timestamp);
+      const timeStr = time.toLocaleString('en-IN', {
+        day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit', hour12: true,
+      });
+
+      const timeDiff = Math.round((Date.now() - time.getTime()) / 60000);
+      const agoStr = timeDiff < 1 ? 'Just now' : timeDiff < 60 ? `${timeDiff}m ago` : `${Math.floor(timeDiff / 60)}h ${timeDiff % 60}m ago`;
+
+      const status = order.status || 'New';
+      const statusColors = {
+        'New': 'bg-red-100 text-red-700 border-red-200',
+        'Processing': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        'Completed': 'bg-green-100 text-green-700 border-green-200',
+      };
+
+      const orderTypeColors = {
+        'Pickup': 'bg-blue-50 text-blue-700',
+        'Delivery': 'bg-indigo-50 text-indigo-700',
+        'Table': 'bg-purple-50 text-purple-700',
+        'Takeaway': 'bg-orange-50 text-orange-700',
+      };
+
+      const cardBorder = status === 'New' ? 'ring-2 ring-red-200' : '';
+      const newBadge = status === 'New' ? 'order-card-new' : '';
+
+      const itemsHtml = order.items.map(i => {
+        const hasAddons = i.addons && i.addons.length > 0;
+        const addonsHtml = hasAddons 
+          ? `<div class="ml-6 mt-1 text-xs text-gray-500">
+              <span class="font-medium">Addons:</span> ${i.addons.map(a => a.name).join(', ')}
+            </div>`
+          : '';
+        return `
+        <div class="py-1.5 border-b border-gray-100 last:border-0">
+          <div class="flex justify-between items-baseline">
+            <div class="flex items-baseline gap-2">
+              <span class="bg-cafe-green text-white text-xs font-bold px-2 py-0.5 rounded-md">${i.quantity}×</span>
+              <span class="font-medium text-gray-800 text-sm">${escapeHtml(i.name)}</span>
+            </div>
+            <span class="font-mono text-gray-500 text-sm">₹${i.subtotal}</span>
+          </div>
+          ${addonsHtml}
+        </div>
+      `}).join('');
+
+      const specialHtml = order.specialInstructions
+        ? `<div class="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mt-3">
+            <p class="text-xs font-bold text-amber-700 uppercase tracking-wide">Note</p>
+            <p class="text-sm text-amber-800">${escapeHtml(order.specialInstructions)}</p>
+          </div>`
+        : '';
+
+      const buttonsHtml = isCompleted
+        ? '<div class="mt-4 py-2.5 bg-green-50 rounded-xl text-center"><p class="text-green-700 font-semibold text-sm flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Completed</p></div>'
+        : `<div class="flex gap-2 mt-4">
+            <button onclick="updateStatus('${order.id}', 'Processing')" class="flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all ${status === 'Processing' ? 'bg-yellow-500 text-white cursor-default' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-500 hover:text-white border border-yellow-200'}">
+              ${status === 'Processing' ? '⚙️ Processing...' : '⚙️ Process'}
+            </button>
+            <button onclick="updateStatus('${order.id}', 'Completed')" class="flex-1 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white py-2.5 rounded-xl font-semibold text-sm border border-green-200 transition-all">
+              ✓ Complete
+            </button>
+          </div>
+          <button onclick="sendOrderViaWhatsApp('${order.id}')" class="whatsapp-btn w-full mt-2">
+            <svg class="whatsapp-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </button>`;
+
+      return `
+        <div class="order-card bg-white rounded-2xl shadow-sm overflow-hidden ring-1 ring-black/5 ${cardBorder} ${newBadge}" id="card-${order.id}">
+          <div class="p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <p class="font-mono text-lg font-black text-cafe-green-dark">#${order.id}</p>
+                <p class="text-gray-400 text-xs mt-0.5">${timeStr} · ${agoStr}</p>
+              </div>
+              <div class="flex flex-col items-end gap-1.5">
+                <span class="status-badge text-xs font-bold px-2.5 py-1 rounded-full border ${statusColors[status]}">${status}</span>
+                <span class="order-type-pill ${orderTypeColors[order.orderType] || 'bg-gray-100 text-gray-600'}">${order.orderType}</span>
+              </div>
+            </div>
+
+            <div class="border-t border-b border-gray-100 py-3 mb-3">
+              <p class="font-bold text-gray-900">${escapeHtml(order.customerName)}</p>
+              <p class="text-gray-500 text-sm font-mono">${escapeHtml(order.phone)}</p>
+              ${order.address ? `<div class="mt-2 text-sm bg-gray-50 rounded-lg px-2 py-1.5">
+                <span class="text-gray-400 text-xs">📍</span>
+                <span class="text-gray-600">${escapeHtml(order.address)}</span>
+              </div>` : ''}
+            </div>
+
+            <div>
+              ${itemsHtml}
+              <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-gray-100">
+                <span class="font-bold text-gray-700">Total</span>
+                <span class="font-black text-cafe-green text-xl">₹${order.total}</span>
+              </div>
+              ${specialHtml}
+            </div>
+
+            ${buttonsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function buildWhatsAppMessage(order) {
+      let msg = `🌿 *TREE OF LIFE CAFE*\n`;
+      msg += `*Order Confirmation*\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      msg += `*Order ID:* #${order.id}\n`;
+      msg += `*Customer:* ${order.customerName}\n`;
+      msg += `*Phone:* ${order.phone}\n`;
+      msg += `*Type:* ${order.orderType}\n`;
+      if (order.address) msg += `*Address:* ${order.address}\n`;
+      msg += `\n📋 *Items:*\n`;
+      order.items.forEach(item => {
+        const hasAddons = item.addons && item.addons.length > 0;
+        const addonText = hasAddons ? `\n    Addons: ${item.addons.map(a => a.name).join(', ')}` : '';
+        msg += `  ${item.quantity}× ${item.name} (₹${item.subtotal})${addonText}\n`;
+      });
+      if (order.specialInstructions) msg += `\n📝 *Note:* ${order.specialInstructions}\n`;
+      msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `💰 *Total: ₹${order.total}*\n━━━━━━━━━━━━━━━━━━━━━\n`;
+      if (order.orderType === 'Delivery') msg += `\n📍 Please share your *live location* for delivery.\n🚍 Free delivery within 1km.`;
+      return msg;
+    }
+
+    function sendOrderViaWhatsApp(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return alert('Order not found.');
+
+      let phone = order.phone.replace(/[^0-9]/g, '');
+      if (phone.length === 10) phone = '91' + phone;
+
+      const msg = buildWhatsAppMessage(order);
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => {
+          b.classList.remove('active', 'bg-cafe-green', 'text-white');
+          b.classList.add('bg-white', 'text-gray-600');
+        });
+        btn.classList.add('active', 'bg-cafe-green', 'text-white');
+        btn.classList.remove('bg-white', 'text-gray-600');
+        currentFilter = btn.dataset.filter;
+        renderOrders();
+      });
+    });
+
+    // Search
+    document.getElementById('order-search').addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      renderOrders();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadOrders();
+      setInterval(() => renderOrders(), 30000);
+    });
+  </script>
+</body>
+</html>

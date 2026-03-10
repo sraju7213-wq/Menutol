@@ -1,0 +1,15 @@
+{
+  "name": "tree-of-life-cafe",
+  "version": "1.0.0",
+  "description": "Online order form for Tree of Life Cafe",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.8.3",
+    "uuid": "^9.0.0"
+  }
+}
