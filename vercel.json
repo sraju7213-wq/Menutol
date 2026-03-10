@@ -10,22 +10,9 @@
       "use": "@vercel/static"
     }
   ],
-  "routes": [
-    {
-      "src": "/api/orders",
-      "dest": "/api/orders.js"
-    },
-    {
-      "src": "/api/create-order",
-      "dest": "/api/create-order.js"
-    },
-    {
-      "src": "/api/update-status",
-      "dest": "/api/update-status.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
+  "rewrites": [
+    { "source": "/api/orders", "destination": "/api/orders.js" },
+    { "source": "/api/create-order", "destination": "/api/create-order.js" },
+    { "source": "/api/update-status", "destination": "/api/update-status.js" }
   ]
 }
