@@ -6,7 +6,19 @@
     },
     {
       "use": "@vercel/static",
-      "src": "public/**"
+      "src": "public/index.html"
+    },
+    {
+      "use": "@vercel/static",
+      "src": "public/counter.html"
+    },
+    {
+      "use": "@vercel/static",
+      "src": "public/script.js"
+    },
+    {
+      "use": "@vercel/static",
+      "src": "public/styles.css"
     }
   ],
   "routes": [
@@ -25,9 +37,6 @@
     {
       "src": "/counter",
       "dest": "/public/counter.html"
-    },
-    {
-      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
