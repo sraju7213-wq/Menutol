@@ -7,11 +7,15 @@ const supabase = createClient(
 );
 
 module.exports = async (req, res) => {
+  console.log('Request body:', JSON.stringify(req.body));
+  console.log('Method:', req.method);
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { customerName, phone, orderType, address, items, specialInstructions, subtotal, gst, cgst, total } = req.body;
+  const body = req.body || {};
+  const { customerName, phone, orderType, address, items, specialInstructions, subtotal, gst, cgst, total } = body;
 
   if (!customerName || !customerName.trim()) {
     return res.status(400).json({ error: 'Customer name is required.' });
@@ -43,9 +47,9 @@ module.exports = async (req, res) => {
   };
 
   const { error } = await supabase.from('orders').insert([order]);
+  console.log('Insert result:', JSON.stringify({ order, error }));
   if (error) {
-    console.error('Error inserting order:', JSON.stringify(error));
-    return res.status(500).json({ error: 'Failed to save order', details: error.message });
+    return res.status(500).json({ error: 'Failed to save order', details: error.message, code: error.code });
   }
 
   res.status(201).json({ success: true, orderId: order.id });
