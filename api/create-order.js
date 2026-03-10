@@ -2,8 +2,14 @@ const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid');
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY
+  'https://npiemdvpbihewhlfzyll.supabase.co',
+  'sb_secret_PB5bjLW6jCUaND8g_DvyEA_jKvH9oEO',
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  }
 );
 
 module.exports = async (req, res) => {
