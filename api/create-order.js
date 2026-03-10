@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
   if (!items || items.length === 0) {
     return res.status(400).json({ error: 'Please select at least one item.' });
   }
-  if ((orderType === 'Pickup' || orderType === 'Delivery') && (!address || !address.trim())) {
+  if (orderType === 'Delivery' && (!address || !address.trim())) {
     return res.status(400).json({ error: 'Address is required for ' + orderType + ' orders.' });
   }
 
