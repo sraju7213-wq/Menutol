@@ -1166,7 +1166,7 @@ function setupFormSubmit() {
     submitBtn.innerHTML = '<span class="spinner"></span>';
 
     try {
-      const res = await fetch("/api/orders", {
+      const res = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
