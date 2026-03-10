@@ -16,8 +16,12 @@ module.exports = async (req, res) => {
 
   const body = req.body || {};
   const { customerName, phone, orderType, address, items, specialInstructions, subtotal, gst, cgst, total } = body;
+  
+  const customername = customerName;
+  const ordertype = orderType;
+  const specialinstructions = specialInstructions;
 
-  if (!customerName || !customerName.trim()) {
+  if (!customername || !customername.trim()) {
     return res.status(400).json({ error: 'Customer name is required.' });
   }
   if (!phone || !phone.trim()) {
@@ -26,18 +30,18 @@ module.exports = async (req, res) => {
   if (!items || items.length === 0) {
     return res.status(400).json({ error: 'Please select at least one item.' });
   }
-  if (orderType === 'Delivery' && (!address || !address.trim())) {
-    return res.status(400).json({ error: 'Address is required for ' + orderType + ' orders.' });
+  if (ordertype === 'Delivery' && (!address || !address.trim())) {
+    return res.status(400).json({ error: 'Address is required for ' + ordertype + ' orders.' });
   }
 
   const order = {
     id: uuidv4().split('-')[0].toUpperCase(),
-    customerName: customerName.trim(),
+    customername: customerName.trim(),
     phone: phone.trim(),
-    orderType: orderType || 'Pickup',
+    ordertype: orderType || 'Pickup',
     address: address ? address.trim() : '',
     items,
-    specialInstructions: specialInstructions ? specialInstructions.trim() : '',
+    specialinstructions: specialInstructions ? specialInstructions.trim() : '',
     subtotal,
     gst,
     cgst,
