@@ -2,8 +2,8 @@ const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid');
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+  process.env.SUPABASE_URL || 'https://npiemdvpbihewhlfzyll.supabase.co',
+  process.env.SUPABASE_KEY || 'sbp_2976ff77f3937bc4b277c28dcbddb64181036e92'
 );
 
 module.exports = async (req, res) => {
@@ -44,8 +44,8 @@ module.exports = async (req, res) => {
 
   const { error } = await supabase.from('orders').insert([order]);
   if (error) {
-    console.error('Error inserting order:', error);
-    return res.status(500).json({ error: 'Failed to save order' });
+    console.error('Error inserting order:', JSON.stringify(error));
+    return res.status(500).json({ error: 'Failed to save order', details: error.message });
   }
 
   res.status(201).json({ success: true, orderId: order.id });
