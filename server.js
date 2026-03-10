@@ -4,45 +4,46 @@ const { Server } = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 3000;
-const ORDERS_FILE = path.join(__dirname, 'data', 'orders.json');
 
-// Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ensure data directory and orders file exist
-if (!fs.existsSync(path.join(__dirname, 'data'))) {
-  fs.mkdirSync(path.join(__dirname, 'data'));
-}
-if (!fs.existsSync(ORDERS_FILE)) {
-  fs.writeFileSync(ORDERS_FILE, JSON.stringify([], null, 2));
+async function readOrders() {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .order('timestamp', { ascending: false });
+  if (error) {
+    console.error('Error fetching orders:', error);
+    return [];
+  }
+  return data || [];
 }
 
-// Helper: read orders
-function readOrders() {
-  try {
-    const data = fs.readFileSync(ORDERS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
+async function writeOrders(orders) {
+  const { error } = await supabase
+    .from('orders')
+    .upsert(orders, { onConflict: 'id' });
+  if (error) {
+    console.error('Error saving orders:', error);
   }
 }
 
-// Helper: write orders
-function writeOrders(orders) {
-  fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
-}
-
-// API: Place a new order (digital order slip)
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
   const { customerName, phone, orderType, address, items, specialInstructions, subtotal, gst, cgst, total } = req.body;
 
-  // Validation
   if (!customerName || !customerName.trim()) {
     return res.status(400).json({ error: 'Customer name is required.' });
   }
@@ -52,7 +53,6 @@ app.post('/api/orders', (req, res) => {
   if (!items || items.length === 0) {
     return res.status(400).json({ error: 'Please select at least one item.' });
   }
-  // Address is required for Pickup and Delivery orders
   if ((orderType === 'Pickup' || orderType === 'Delivery') && (!address || !address.trim())) {
     return res.status(400).json({ error: 'Address is required for ' + orderType + ' orders.' });
   }
@@ -73,56 +73,51 @@ app.post('/api/orders', (req, res) => {
     status: 'New',
   };
 
-  const orders = readOrders();
-  orders.unshift(order);
-  writeOrders(orders);
+  const { error } = await supabase.from('orders').insert([order]);
+  if (error) {
+    console.error('Error inserting order:', error);
+    return res.status(500).json({ error: 'Failed to save order' });
+  }
 
-  // Emit new order to all connected counter dashboards
   io.emit('new-order', order);
 
   res.status(201).json({ success: true, orderId: order.id });
 });
 
-// API: Get all orders (for counter dashboard)
-app.get('/api/orders', (req, res) => {
-  const orders = readOrders();
+app.get('/api/orders', async (req, res) => {
+  const orders = await readOrders();
   res.json(orders);
 });
 
-// API: Update order status (Processing / Completed)
-app.post('/api/orders/:id/status', (req, res) => {
+app.post('/api/orders/:id/status', async (req, res) => {
   const { status } = req.body;
   if (!status || !['Processing', 'Completed'].includes(status)) {
     return res.status(400).json({ error: 'Invalid status. Use Processing or Completed.' });
   }
 
-  const orders = readOrders();
-  const orderIndex = orders.findIndex(o => o.id === req.params.id);
+  const { error } = await supabase
+    .from('orders')
+    .update({ status })
+    .eq('id', req.params.id);
 
-  if (orderIndex === -1) {
-    return res.status(404).json({ error: 'Order not found' });
+  if (error) {
+    console.error('Error updating order:', error);
+    return res.status(500).json({ error: 'Failed to update order' });
   }
 
-  orders[orderIndex].status = status;
-  writeOrders(orders);
-
-  // Emit status update to all connected counter dashboards
   io.emit('order-status-updated', { id: req.params.id, status });
 
   res.json({ success: true });
 });
 
-// Serve counter dashboard page
 app.get('/counter', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'counter.html'));
 });
 
-// Serve main order page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Socket.io connection
 io.on('connection', (socket) => {
   console.log('  Counter dashboard connected');
   socket.on('disconnect', () => {
@@ -134,5 +129,6 @@ server.listen(PORT, () => {
   console.log(`\n  Tree of Life Cafe - Digital Order Slip System`);
   console.log(`  =============================================`);
   console.log(`  Server running at:      http://localhost:${PORT}`);
-  console.log(`  Counter dashboard at:   http://localhost:${PORT}/counter\n`);
+  console.log(`  Counter dashboard at:   http://localhost:${PORT}/counter`);
+  console.log(`  Using Supabase:         ${process.env.SUPABASE_URL}\n`);
 });
