@@ -476,6 +476,7 @@ const FOOD_CATEGORIES_WITH_ADDONS = new Set([
 
 const quantities = {};
 const selectedAddons = {};
+const CAFE_WHATSAPP_NUMBER = "918826139339";
 let searchQuery = "";
 let openCategoryName = "";
 let reducedMotionQuery = null;
@@ -492,6 +493,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupScrollReveal();
   setupOrderType();
   setupFormSubmit();
+  setupDirectWhatsAppButton();
   setupNewOrderButton();
   setupSearch();
   setupFloatingCart();
@@ -1182,67 +1184,176 @@ function updateFloatingCart() {
   }
 }
 
+function collectOrderDataFromForm() {
+  hideError();
+
+  const customerName = document.getElementById("customerName").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const orderType = document.getElementById("orderType").value;
+  const address = document.getElementById("address").value.trim();
+  const specialInstructions = document
+    .getElementById("specialInstructions")
+    .value.trim();
+
+  if (!customerName) {
+    showError("Please enter your name.");
+    return null;
+  }
+  if (!phone) {
+    showError("Please enter your phone number.");
+    return null;
+  }
+
+  if ((orderType === "Pickup" || orderType === "Delivery") && !address) {
+    showError(`Please enter your address for ${orderType}.`);
+    return null;
+  }
+
+  const selectedItems = [];
+  let subtotal = 0;
+  MENU.forEach((category) => {
+    category.items.forEach((item) => {
+      const qty = quantities[item.name] || 0;
+      if (qty > 0) {
+        const itemAddons = selectedAddons[item.name] || [];
+        const addonTotal = itemAddons.reduce(
+          (sum, addon) => sum + addon.price * qty,
+          0,
+        );
+        const itemSubtotal = item.price * qty + addonTotal;
+        selectedItems.push({
+          name: item.name,
+          basePrice: item.price,
+          quantity: qty,
+          addons: itemAddons,
+          subtotal: itemSubtotal,
+        });
+        subtotal += itemSubtotal;
+      }
+    });
+  });
+
+  if (selectedItems.length === 0) {
+    showError("Please select at least one item.");
+    return null;
+  }
+
+  const gst = Math.round(subtotal * 0.025 * 100) / 100;
+  const cgst = Math.round(subtotal * 0.025 * 100) / 100;
+  const total = subtotal + gst + cgst;
+
+  return {
+    customerName,
+    phone,
+    orderType,
+    address,
+    items: selectedItems,
+    specialInstructions,
+    subtotal,
+    gst,
+    cgst,
+    total,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function buildCompleteWhatsAppMessage(order) {
+  const timestamp = order.timestamp
+    ? new Date(order.timestamp).toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : new Date().toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+
+  let msg = `🌿 *TREE OF LIFE CAFE*\n`;
+  msg += `*Digital Order Ticket #${order.id || "NEW"}*\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  msg += `📅 *Date & Time:* ${timestamp}\n`;
+  msg += `👤 *Customer Name:* ${order.customerName}\n`;
+  msg += `📞 *Phone Number:* ${order.phone}\n`;
+  msg += `🍽️ *Order Type:* ${order.orderType}\n`;
+  if (order.address && order.address.trim()) {
+    const label = order.orderType === "Table" ? "Table Number" : "Delivery Address";
+    msg += `📍 *${label}:* ${order.address}\n`;
+  }
+
+  msg += `\n📋 *Ordered Items Breakdown:*\n`;
+  order.items.forEach((item, index) => {
+    const itemTotal = item.subtotal || (item.basePrice ? item.basePrice * item.quantity : item.price * item.quantity);
+    msg += `${index + 1}. *${item.name}* × ${item.quantity} — ₹${itemTotal}\n`;
+    if (item.addons && item.addons.length > 0) {
+      const addonsStr = item.addons
+        .map((a) => `${a.name}${a.price ? ` (+₹${a.price})` : ""}`)
+        .join(", ");
+      msg += `   └ *Addons:* ${addonsStr}\n`;
+    }
+  });
+
+  if (order.specialInstructions && order.specialInstructions.trim()) {
+    msg += `\n📝 *Special Instructions:* ${order.specialInstructions}\n`;
+  }
+
+  msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+  if (order.subtotal !== undefined) {
+    msg += `💵 *Subtotal:* ₹${order.subtotal}\n`;
+  }
+  if (order.gst !== undefined && order.cgst !== undefined) {
+    msg += `🏷️ *GST (2.5%):* ₹${order.gst}\n`;
+    msg += `🏷️ *CGST (2.5%):* ₹${order.cgst}\n`;
+  }
+  msg += `💰 *Grand Total: ₹${order.total}*\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+
+  if (order.orderType === "Delivery") {
+    msg += `\n📍 *Please share your live location on WhatsApp for swift delivery.*\n🚍 Free delivery within 1km.\n`;
+  }
+
+  msg += `\n✨ *Thank you for ordering with Tree of Life Cafe!*`;
+
+  return msg;
+}
+
+function setupDirectWhatsAppButton() {
+  const btn = document.getElementById("direct-whatsapp-btn");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    const orderData = collectOrderDataFromForm();
+    if (!orderData) return;
+
+    orderData.id = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    // Send order to POS asynchronously
+    try {
+      fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData),
+      });
+    } catch (e) {
+      console.warn("Async POS order notice:", e);
+    }
+
+    const msg = buildCompleteWhatsAppMessage(orderData);
+    const encoded = encodeURIComponent(msg);
+    window.open(`https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${encoded}`, "_blank");
+
+    showConfirmation(orderData);
+    showToast("Opening WhatsApp with full order details!", "success");
+  });
+}
+
 function setupFormSubmit() {
   const form = document.getElementById("order-form");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    hideError();
 
-    const customerName = document.getElementById("customerName").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const orderType = document.getElementById("orderType").value;
-    const address = document.getElementById("address").value.trim();
-    const specialInstructions = document
-      .getElementById("specialInstructions")
-      .value.trim();
-
-    if (!customerName) {
-      showError("Please enter your name.");
-      return;
-    }
-    if (!phone) {
-      showError("Please enter your phone number.");
-      return;
-    }
-
-    if ((orderType === "Pickup" || orderType === "Delivery") && !address) {
-      showError(`Please enter your address for ${orderType}.`);
-      return;
-    }
-
-    const selectedItems = [];
-    let subtotal = 0;
-    MENU.forEach((category) => {
-      category.items.forEach((item) => {
-        const qty = quantities[item.name] || 0;
-        if (qty > 0) {
-          const itemAddons = selectedAddons[item.name] || [];
-          const addonTotal = itemAddons.reduce(
-            (sum, addon) => sum + addon.price * qty,
-            0,
-          );
-          const itemSubtotal = item.price * qty + addonTotal;
-          selectedItems.push({
-            name: item.name,
-            basePrice: item.price,
-            quantity: qty,
-            addons: itemAddons,
-            subtotal: itemSubtotal,
-          });
-          subtotal += itemSubtotal;
-        }
-      });
-    });
-
-    const gst = Math.round(subtotal * 0.025 * 100) / 100;
-    const cgst = Math.round(subtotal * 0.025 * 100) / 100;
-    const total = subtotal + gst + cgst;
-
-    if (selectedItems.length === 0) {
-      showError("Please select at least one item.");
-      return;
-    }
+    const orderData = collectOrderDataFromForm();
+    if (!orderData) return;
 
     const submitBtn = document.getElementById("submit-btn");
     const originalHTML = submitBtn.innerHTML;
@@ -1253,18 +1364,7 @@ function setupFormSubmit() {
       const res = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerName,
-          phone,
-          orderType,
-          address,
-          items: selectedItems,
-          specialInstructions,
-          subtotal,
-          gst,
-          cgst,
-          total,
-        }),
+        body: JSON.stringify(orderData),
       });
 
       const data = await res.json();
@@ -1274,10 +1374,14 @@ function setupFormSubmit() {
         return;
       }
 
-      showConfirmation(data.orderId);
+      orderData.id = data.orderId || orderData.id;
+      showConfirmation(orderData);
       showToast("Order submitted successfully!", "success");
     } catch (err) {
-      showError("Could not connect to server. Please try again.");
+      // Offline fallback: Generate temporary ticket and allow sending on WhatsApp
+      orderData.id = Math.random().toString(36).substring(2, 10).toUpperCase();
+      showConfirmation(orderData);
+      showToast("Server offline — ready to send via WhatsApp!", "info");
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalHTML;
@@ -1285,8 +1389,34 @@ function setupFormSubmit() {
   });
 }
 
-function showConfirmation(orderId) {
+function showConfirmation(order) {
+  const orderId = typeof order === "object" ? order.id : order;
   document.getElementById("confirm-order-id").textContent = `#${orderId}`;
+
+  if (typeof order === "object") {
+    const msg = buildCompleteWhatsAppMessage(order);
+    const encoded = encodeURIComponent(msg);
+
+    const cafeBtn = document.getElementById("confirm-whatsapp-cafe-btn");
+    if (cafeBtn) {
+      cafeBtn.href = `https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${encoded}`;
+    }
+
+    const selfBtn = document.getElementById("confirm-whatsapp-self-btn");
+    if (selfBtn) {
+      let cleanPhone = (order.phone || "").replace(/[^0-9]/g, "");
+      if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
+      selfBtn.href = `https://wa.me/${cleanPhone}?text=${encoded}`;
+    }
+
+    // Automatically open WhatsApp in new tab for instant convenience
+    try {
+      window.open(`https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${encoded}`, "_blank");
+    } catch (e) {
+      // Browser popup blocked, link remains clickable
+    }
+  }
+
   document.getElementById("confirmation-overlay").classList.remove("hidden");
 
   // Celebratory Confetti Shower & Harmonic Chime
