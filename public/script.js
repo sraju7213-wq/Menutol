@@ -493,7 +493,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupScrollReveal();
   setupOrderType();
   setupFormSubmit();
-  setupDirectWhatsAppButton();
   setupNewOrderButton();
   setupSearch();
   setupFloatingCart();
@@ -1137,13 +1136,25 @@ function setupSearch() {
 }
 
 function setupFloatingCart() {
-  const cart = document.getElementById("floating-cart");
   const checkoutBtn = document.getElementById("scroll-to-checkout");
+  if (!checkoutBtn) return;
 
   checkoutBtn.addEventListener("click", () => {
-    document
-      .getElementById("order-total-section")
-      .scrollIntoView({ behavior: "smooth" });
+    const customerName = document.getElementById("customerName");
+    const phone = document.getElementById("phone");
+
+    if (!customerName || !phone || !customerName.value.trim() || !phone.value.trim()) {
+      const orderForm = document.getElementById("order-form");
+      if (orderForm) {
+        orderForm.scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(() => {
+          if (customerName) customerName.focus();
+        }, 450);
+      }
+      showToast("Please enter your name & phone to order on WhatsApp", "info");
+    } else {
+      document.getElementById("submit-btn").click();
+    }
   });
 }
 
@@ -1316,75 +1327,51 @@ function buildCompleteWhatsAppMessage(order) {
   return msg;
 }
 
-function setupDirectWhatsAppButton() {
-  const btn = document.getElementById("direct-whatsapp-btn");
-  if (!btn) return;
-
-  btn.addEventListener("click", () => {
-    const orderData = collectOrderDataFromForm();
-    if (!orderData) return;
-
-    orderData.id = Math.random().toString(36).substring(2, 10).toUpperCase();
-
-    // Send order to POS asynchronously
-    try {
-      fetch("/api/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-      });
-    } catch (e) {
-      console.warn("Async POS order notice:", e);
-    }
-
-    const msg = buildCompleteWhatsAppMessage(orderData);
-    const encoded = encodeURIComponent(msg);
-    window.open(`https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${encoded}`, "_blank");
-
-    showConfirmation(orderData);
-    showToast("Opening WhatsApp with full order details!", "success");
-  });
-}
-
 function setupFormSubmit() {
   const form = document.getElementById("order-form");
+  if (!form) return;
 
-  form.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
 
     const orderData = collectOrderDataFromForm();
     if (!orderData) return;
 
-    const submitBtn = document.getElementById("submit-btn");
-    const originalHTML = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner"></span>';
+    orderData.id = "TOL" + Math.random().toString(36).substring(2, 7).toUpperCase();
 
+    // Prepare complete WhatsApp message
+    const msg = buildCompleteWhatsAppMessage(orderData);
+    const encoded = encodeURIComponent(msg);
+    const whatsappUrl = `https://wa.me/${CAFE_WHATSAPP_NUMBER}?text=${encoded}`;
+
+    // Open WhatsApp synchronously on user click/tap so popups are never blocked
     try {
-      const res = await fetch("/api/create-order", {
+      window.open(whatsappUrl, "_blank");
+    } catch (err) {
+      console.warn("Popup blocked notice:", err);
+    }
+
+    // Display confirmation modal
+    showConfirmation(orderData);
+    showToast("Opening WhatsApp with complete order slip!", "success");
+
+    // Asynchronously record order in POS kitchen counter
+    try {
+      fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        showError(data.error || "Something went wrong. Please try again.");
-        return;
-      }
-
-      orderData.id = data.orderId || orderData.id;
-      showConfirmation(orderData);
-      showToast("Order submitted successfully!", "success");
-    } catch (err) {
-      // Offline fallback: Generate temporary ticket and allow sending on WhatsApp
-      orderData.id = Math.random().toString(36).substring(2, 10).toUpperCase();
-      showConfirmation(orderData);
-      showToast("Server offline — ready to send via WhatsApp!", "info");
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = originalHTML;
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.orderId) {
+            orderData.id = data.orderId;
+            document.getElementById("confirm-order-id").textContent = `#${data.orderId}`;
+          }
+        })
+        .catch((err) => console.warn("POS sync notice:", err));
+    } catch (e) {
+      console.warn("Async POS order notice:", e);
     }
   });
 }
@@ -1744,9 +1731,20 @@ function setup3DToolbar() {
   const glanceCheckout = document.getElementById("glance-checkout-btn");
   if (glanceCheckout) {
     glanceCheckout.addEventListener("click", () => {
-      const orderSummary = document.getElementById("order-total-section");
-      if (orderSummary) {
-        orderSummary.scrollIntoView({ behavior: "smooth" });
+      const customerName = document.getElementById("customerName");
+      const phone = document.getElementById("phone");
+
+      if (!customerName || !phone || !customerName.value.trim() || !phone.value.trim()) {
+        const orderForm = document.getElementById("order-form");
+        if (orderForm) {
+          orderForm.scrollIntoView({ behavior: "smooth", block: "start" });
+          setTimeout(() => {
+            if (customerName) customerName.focus();
+          }, 450);
+        }
+        showToast("Please enter your name & phone to order on WhatsApp", "info");
+      } else {
+        document.getElementById("submit-btn").click();
       }
     });
   }
