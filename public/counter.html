@@ -4,78 +4,41 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Counter Dashboard — Tree of Life Cafe</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/dist/output.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['DM Sans', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            cafe: {
-              green: '#2D5A27',
-              'green-light': '#4A7C43',
-              'green-dark': '#1B3B17',
-              beige: '#F5F0E8',
-              'beige-dark': '#E8DFD0',
-              cream: '#FFFDF7',
-            }
-          },
-          animation: {
-            'slide-in': 'slideIn 0.3s ease-out',
-            'pulse-once': 'pulseOnce 0.5s ease-out',
-          },
-          keyframes: {
-            slideIn: {
-              '0%': { opacity: '0', transform: 'translateX(-10px)' },
-              '100%': { opacity: '1', transform: 'translateX(0)' },
-            },
-            pulseOnce: {
-              '0%': { transform: 'scale(1)' },
-              '50%': { transform: 'scale(1.05)' },
-              '100%': { transform: 'scale(1)' },
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="bg-gray-50 min-h-screen font-sans">
+<body class="bg-[#08170b] text-[#e4eee2] min-h-screen font-sans selection:bg-[#d4af37] selection:text-[#08170b]">
 
   <!-- Header -->
-  <header class="bg-gradient-to-r from-cafe-green-dark to-cafe-green text-white shadow-lg sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 py-3">
+  <header class="bg-gradient-to-r from-[#07170a] via-[#102d18] to-[#07170a] border-b border-amber-500/30 text-white shadow-xl sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3.5">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+          <div class="w-10 h-10 bg-amber-400/15 border border-amber-400/30 rounded-xl flex items-center justify-center text-[#ffd700]">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
           </div>
           <div>
-            <h1 class="text-xl font-bold tracking-tight">Tree of Life Cafe</h1>
-            <p class="text-cafe-green-light text-xs font-medium">Counter Dashboard</p>
+            <h1 class="text-xl font-black tracking-tight text-[#f5e29e]">Tree of Life Cafe</h1>
+            <p class="text-emerald-300/80 text-xs font-medium">Counter Barista Dashboard</p>
           </div>
         </div>
         
         <div class="flex items-center gap-2 md:gap-3">
-          <div id="connection-status" class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-red-500/20 text-red-300">
-            <span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
-            <span class="hidden sm:inline">Disconnected</span>
+          <div id="connection-status" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+            <span class="hidden sm:inline">Live Sync</span>
           </div>
           
-          <button id="sound-toggle" onclick="toggleSound()" class="text-xs md:text-sm px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition font-medium flex items-center gap-1.5">
-            <svg id="sound-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+          <button id="sound-toggle" onclick="toggleSound()" class="text-xs md:text-sm px-3.5 py-1.5 rounded-full bg-[#16401f] border border-amber-400/30 hover:border-amber-400/60 text-[#f5e29e] transition font-medium flex items-center gap-1.5">
+            <svg id="sound-icon" class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
             <span class="hidden sm:inline">Sound: ON</span>
           </button>
           
-          <a href="/" class="text-xs md:text-sm px-3 py-1.5 rounded-full border border-white/30 hover:bg-white/10 transition font-medium">
-            <span class="hidden sm:inline">New Order</span>
-            <svg class="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <a href="/" class="text-xs md:text-sm px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#d4af37] via-[#f5e29e] to-[#b38728] text-[#08170b] hover:from-[#e5c04b] hover:to-[#c59632] transition font-bold shadow-md flex items-center gap-1.5">
+            <span class="hidden sm:inline">Customer Menu</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
           </a>
         </div>
       </div>
@@ -87,24 +50,24 @@
     <div class="flex flex-col sm:flex-row gap-3">
       <!-- Search -->
       <div class="relative flex-1">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         <input type="text" id="order-search" 
-          class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cafe-green focus:border-transparent outline-none"
+          class="w-full pl-11 pr-4 py-2.5 bg-[#0c2413] border border-amber-400/30 rounded-xl text-sm text-[#f5e29e] placeholder:text-emerald-300/40 focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 outline-none transition"
           placeholder="Search by name, phone, or order ID...">
       </div>
       
       <!-- Filter Pills -->
       <div class="flex gap-2 overflow-x-auto pb-1">
-        <button data-filter="all" class="filter-btn active px-4 py-2 rounded-xl text-sm font-medium bg-cafe-green text-white transition-all">
+        <button data-filter="all" class="filter-btn active px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-[#d4af37] to-[#b38728] text-[#08170b] shadow-md transition-all">
           All
         </button>
-        <button data-filter="New" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-gray-600 border border-gray-200 hover:border-cafe-green transition-all">
+        <button data-filter="New" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-[#0c2413] text-[#f5e29e] border border-amber-400/30 hover:border-amber-400/70 transition-all">
           New
         </button>
-        <button data-filter="Processing" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-gray-600 border border-gray-200 hover:border-cafe-green transition-all">
+        <button data-filter="Processing" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-[#0c2413] text-[#f5e29e] border border-amber-400/30 hover:border-amber-400/70 transition-all">
           Processing
         </button>
-        <button data-filter="Completed" class="filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-gray-600 border border-gray-200 hover:border-cafe-green transition-all">
+        <button data-filter="Completed" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-[#0c2413] text-[#f5e29e] border border-amber-400/30 hover:border-amber-400/70 transition-all">
           Completed
         </button>
       </div>
@@ -114,26 +77,26 @@
   <!-- Stats -->
   <div class="max-w-7xl mx-auto px-4 pb-4">
     <div class="grid grid-cols-3 gap-3">
-      <div class="bg-white rounded-2xl shadow-sm p-4 text-center ring-1 ring-black/5">
-        <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div class="bg-[#0c2413] border border-amber-500/25 rounded-2xl shadow-lg p-4 text-center ring-1 ring-amber-400/10">
+        <div class="w-10 h-10 bg-red-950/60 border border-red-500/40 rounded-xl flex items-center justify-center mx-auto mb-2">
+          <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-        <p id="stat-new" class="text-2xl font-bold text-red-600">0</p>
-        <p class="text-xs text-gray-500 font-medium">New</p>
+        <p id="stat-new" class="text-2xl font-black text-red-400">0</p>
+        <p class="text-xs text-emerald-200/70 font-semibold uppercase tracking-wider">New</p>
       </div>
-      <div class="bg-white rounded-2xl shadow-sm p-4 text-center ring-1 ring-black/5">
-        <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-          <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <div class="bg-[#0c2413] border border-amber-500/25 rounded-2xl shadow-lg p-4 text-center ring-1 ring-amber-400/10">
+        <div class="w-10 h-10 bg-amber-950/60 border border-amber-500/40 rounded-xl flex items-center justify-center mx-auto mb-2">
+          <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         </div>
-        <p id="stat-processing" class="text-2xl font-bold text-yellow-600">0</p>
-        <p class="text-xs text-gray-500 font-medium">Processing</p>
+        <p id="stat-processing" class="text-2xl font-black text-amber-300">0</p>
+        <p class="text-xs text-emerald-200/70 font-semibold uppercase tracking-wider">Processing</p>
       </div>
-      <div class="bg-white rounded-2xl shadow-sm p-4 text-center ring-1 ring-black/5">
-        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div class="bg-[#0c2413] border border-amber-500/25 rounded-2xl shadow-lg p-4 text-center ring-1 ring-amber-400/10">
+        <div class="w-10 h-10 bg-emerald-950/60 border border-emerald-500/40 rounded-xl flex items-center justify-center mx-auto mb-2">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-        <p id="stat-completed" class="text-2xl font-bold text-green-600">0</p>
-        <p class="text-xs text-gray-500 font-medium">Completed</p>
+        <p id="stat-completed" class="text-2xl font-black text-emerald-400">0</p>
+        <p class="text-xs text-emerald-200/70 font-semibold uppercase tracking-wider">Completed</p>
       </div>
     </div>
   </div>
@@ -141,18 +104,18 @@
   <!-- Active Orders -->
   <div class="max-w-7xl mx-auto px-4 pb-4">
     <div class="flex items-center justify-between mb-3">
-      <h2 class="text-lg font-bold text-gray-800">Active Orders</h2>
-      <span id="active-count" class="text-sm text-gray-500 font-medium">0 orders</span>
+      <h2 class="text-lg font-black text-[#f5e29e]">Active Orders</h2>
+      <span id="active-count" class="text-sm text-emerald-300/70 font-medium">0 orders</span>
     </div>
     <div id="active-orders" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <!-- Order cards rendered by JS -->
     </div>
-    <div id="no-active" class="hidden bg-white rounded-2xl shadow-sm p-12 text-center">
-      <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+    <div id="no-active" class="hidden bg-[#0c2413] border border-amber-500/25 rounded-2xl shadow-lg p-12 text-center">
+      <div class="w-16 h-16 bg-amber-400/10 border border-amber-400/25 rounded-full flex items-center justify-center mx-auto mb-4 text-[#ffd700]">
+        <svg class="w-8 h-8 text-[#ffd700]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
       </div>
-      <p class="text-lg font-semibold text-gray-700">No active orders</p>
-      <p class="text-sm text-gray-400">New orders will appear here</p>
+      <p class="text-lg font-bold text-[#f5e29e]">No active orders</p>
+      <p class="text-sm text-emerald-300/60 mt-1">New incoming orders will appear here automatically</p>
     </div>
   </div>
 
@@ -160,16 +123,17 @@
   <div class="max-w-7xl mx-auto px-4 pb-8">
     <details class="group">
       <summary class="flex items-center justify-between cursor-pointer select-none py-2">
-        <h2 class="text-lg font-bold text-gray-500 group-hover:text-gray-700 transition-colors">
-          Completed Orders <span id="completed-count" class="text-sm font-normal ml-2">(0)</span>
+        <h2 class="text-lg font-bold text-emerald-300/70 group-hover:text-[#f5e29e] transition-colors">
+          Completed Orders <span id="completed-count" class="text-sm font-normal ml-2 text-emerald-400/60">(0)</span>
         </h2>
-        <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        <svg class="w-5 h-5 text-amber-400/70 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
       </summary>
       <div id="completed-orders" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-3">
         <!-- Completed order cards -->
       </div>
     </details>
   </div>
+
 
   <!-- New Order Banner -->
   <div id="new-order-banner" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50">
@@ -417,33 +381,33 @@
           </button>`;
 
       return `
-        <div class="order-card bg-white rounded-2xl shadow-sm overflow-hidden ring-1 ring-black/5 ${cardBorder} ${newBadge}" id="card-${order.id}">
+        <div class="order-card bg-[#0c2413] border border-amber-500/30 rounded-2xl shadow-xl overflow-hidden ring-1 ring-amber-400/10 ${cardBorder} ${newBadge}" id="card-${order.id}">
           <div class="p-5">
             <div class="flex items-start justify-between mb-3">
               <div>
-                <p class="font-mono text-lg font-black text-cafe-green-dark">#${order.id}</p>
-                <p class="text-gray-400 text-xs mt-0.5">${timeStr} · ${agoStr}</p>
+                <p class="font-mono text-lg font-black text-[#ffd700] tracking-wide">#${order.id}</p>
+                <p class="text-emerald-300/60 text-xs mt-0.5">${timeStr} · ${agoStr}</p>
               </div>
               <div class="flex flex-col items-end gap-1.5">
                 <span class="status-badge text-xs font-bold px-2.5 py-1 rounded-full border ${statusColors[status]}">${status}</span>
-                <span class="order-type-pill ${orderTypeColors[order.orderType] || 'bg-gray-100 text-gray-600'}">${order.orderType}</span>
+                <span class="order-type-pill ${orderTypeColors[order.orderType] || 'bg-[#16401f] text-emerald-200'}">${order.orderType}</span>
               </div>
             </div>
 
-            <div class="border-t border-b border-gray-100 py-3 mb-3">
-              <p class="font-bold text-gray-900">${escapeHtml(order.customerName)}</p>
-              <p class="text-gray-500 text-sm font-mono">${escapeHtml(order.phone)}</p>
-              ${order.address ? `<div class="mt-2 text-sm bg-gray-50 rounded-lg px-2 py-1.5">
-                <span class="text-gray-400 text-xs">📍</span>
-                <span class="text-gray-600">${escapeHtml(order.address)}</span>
+            <div class="border-t border-b border-amber-500/20 py-3 mb-3">
+              <p class="font-bold text-[#f5e29e] text-base">${escapeHtml(order.customerName)}</p>
+              <p class="text-emerald-300/70 text-sm font-mono">${escapeHtml(order.phone)}</p>
+              ${order.address ? `<div class="mt-2 text-sm bg-[#06140a] border border-amber-400/20 rounded-lg px-2.5 py-1.5">
+                <span class="text-amber-400 text-xs">📍</span>
+                <span class="text-emerald-200/90">${escapeHtml(order.address)}</span>
               </div>` : ''}
             </div>
 
             <div>
               ${itemsHtml}
-              <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-gray-100">
-                <span class="font-bold text-gray-700">Total</span>
-                <span class="font-black text-cafe-green text-xl">₹${order.total}</span>
+              <div class="flex justify-between items-center pt-3 mt-2 border-t border-amber-500/25">
+                <span class="font-bold text-emerald-200/80">Total</span>
+                <span class="font-black text-[#ffd700] text-xl drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]">₹${order.total}</span>
               </div>
               ${specialHtml}
             </div>

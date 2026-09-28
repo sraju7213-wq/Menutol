@@ -483,12 +483,20 @@ let revealObserver = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   renderMenu();
+  setupCategoryDock();
+  setupFilterChips();
+  setupItemRowTilt();
+  setup3DToolbar();
+  setupAmbientParticles();
+  setupKeyboardShortcuts();
   setupScrollReveal();
   setupOrderType();
   setupFormSubmit();
   setupNewOrderButton();
   setupSearch();
   setupFloatingCart();
+  setupDesktopGlance();
+  setupDockScrollSpy();
 });
 
 function prefersReducedMotion() {
@@ -625,6 +633,21 @@ function setupScrollReveal() {
   elements.forEach((el) => revealObserver.observe(el));
 }
 
+function scrollPillInDock(pill) {
+  const dock = document.getElementById("category-nav-dock");
+  if (!dock || !pill) return;
+
+  const pillLeft = pill.offsetLeft;
+  const pillWidth = pill.offsetWidth;
+  const dockWidth = dock.clientWidth;
+  const targetScrollLeft = pillLeft - (dockWidth / 2) + (pillWidth / 2);
+
+  dock.scrollTo({
+    left: Math.max(0, targetScrollLeft),
+    behavior: "smooth",
+  });
+}
+
 function renderMenu() {
   const container = document.getElementById("menu-container");
   container.innerHTML = "";
@@ -667,12 +690,43 @@ function renderMenu() {
         e.preventDefault();
 
         if (!details.open) {
+          // Record current position on screen before any DOM collapse
+          const initialTop = summary.getBoundingClientRect().top;
+
           document
             .querySelectorAll(".collapsible-category[open]")
             .forEach((d) => {
-              if (d !== details) setCategoryOpen(d, false, { animate: true });
+              if (d !== details) setCategoryOpen(d, false, { animate: false });
             });
           setCategoryOpen(details, true, { animate: true });
+
+          if (window.Scene3D) {
+            window.Scene3D.setCategoryMood(category.category);
+            window.Scene3D.triggerBounce();
+          }
+          const label = document.getElementById("mood-category-label");
+          if (label) {
+            label.textContent = `${icon} ${category.category}`;
+          }
+
+          document.querySelectorAll(".dock-pill").forEach((pill) => {
+            if (pill.dataset.category === category.category) {
+              pill.classList.add("active");
+              // Safely scroll only the dock horizontal bar without touching window scroll!
+              scrollPillInDock(pill);
+            } else {
+              pill.classList.remove("active");
+            }
+          });
+
+          // Prevent layout shift: if closing other categories shifted this summary, compensate immediately
+          requestAnimationFrame(() => {
+            const currentTop = summary.getBoundingClientRect().top;
+            const diff = currentTop - initialTop;
+            if (Math.abs(diff) > 2) {
+              window.scrollBy({ top: diff, behavior: "instant" });
+            }
+          });
         } else {
           setCategoryOpen(details, false, { animate: true });
         }
@@ -765,6 +819,8 @@ function renderMenu() {
   });
 
   updateMenuCount();
+  setupItemRowTilt();
+  updateDesktopGlance();
 }
 
 function highlightSearch(text) {
@@ -796,14 +852,39 @@ function handleQuantityClick(e) {
 
   if (action === "plus" && quantities[itemName] < 20) {
     quantities[itemName]++;
+
+    // 3D Cup Reaction & Sound
+    if (window.Scene3D) {
+      window.Scene3D.triggerBounce();
+    }
+
+    // Micro Confetti from Button Position
+    if (window.confetti && !prefersReducedMotion()) {
+      const rect = btn.getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+      window.confetti({
+        particleCount: 14,
+        spread: 45,
+        startVelocity: 16,
+        origin: { x, y },
+        colors: ["#2D5A27", "#4A7C43", "#F59E0B", "#D97706", "#FFFDF7"],
+        disableForReducedMotion: true,
+      });
+    }
   } else if (action === "minus" && quantities[itemName] > 0) {
     quantities[itemName]--;
+    if (window.Scene3D) {
+      window.Scene3D.playSound("click");
+    }
   }
 
   updateItemRow(itemName);
   updateCategoryCount(itemName);
+  updateCategoryDockCount(itemName);
   updateTotal();
   updateFloatingCart();
+  updateDesktopGlance();
   updateMenuCount();
   toggleAddonSection(itemName);
 }
@@ -821,15 +902,18 @@ function handleAddonChange(e) {
   if (checkbox.checked) {
     addonCard.classList.add("checked");
     selectedAddons[itemName].push({ name: addonName, price: addonPrice });
+    if (window.Scene3D) window.Scene3D.playSound("pop");
   } else {
     addonCard.classList.remove("checked");
     selectedAddons[itemName] = selectedAddons[itemName].filter(
       (a) => a.name !== addonName,
     );
+    if (window.Scene3D) window.Scene3D.playSound("click");
   }
 
   updateTotal();
   updateFloatingCart();
+  updateDesktopGlance();
 }
 
 function toggleAddonSection(itemName) {
@@ -1204,6 +1288,37 @@ function setupFormSubmit() {
 function showConfirmation(orderId) {
   document.getElementById("confirm-order-id").textContent = `#${orderId}`;
   document.getElementById("confirmation-overlay").classList.remove("hidden");
+
+  // Celebratory Confetti Shower & Harmonic Chime
+  if (window.confetti && !prefersReducedMotion()) {
+    window.confetti({
+      particleCount: 110,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ["#2D5A27", "#10B981", "#F59E0B", "#F5F0E8", "#D97706"],
+    });
+    setTimeout(() => {
+      window.confetti({
+        particleCount: 60,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ["#2D5A27", "#F59E0B", "#10B981"],
+      });
+      window.confetti({
+        particleCount: 60,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ["#2D5A27", "#F59E0B", "#10B981"],
+      });
+    }, 250);
+  }
+
+  if (window.Scene3D) {
+    window.Scene3D.playSound("success");
+    window.Scene3D.triggerBounce();
+  }
 }
 
 function setupNewOrderButton() {
@@ -1266,15 +1381,15 @@ function showToast(message, type = "info") {
   const toast = document.createElement("div");
 
   const colors = {
-    success: "bg-green-600",
-    error: "bg-red-600",
-    info: "bg-cafe-green",
+    success: "bg-[#0c2413] border border-amber-400/50 text-[#f5e29e] shadow-[0_10px_25px_rgba(0,0,0,0.5)]",
+    error: "bg-[#2a0c0c] border border-red-500/50 text-red-200 shadow-[0_10px_25px_rgba(0,0,0,0.5)]",
+    info: "bg-[#0c2413] border border-amber-400/40 text-[#f5e29e] shadow-[0_10px_25px_rgba(0,0,0,0.5)]",
   };
 
-  toast.className = `toast ${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3`;
+  toast.className = `toast ${colors[type] || colors.info} px-4 py-3 rounded-xl backdrop-blur-md flex items-center gap-3`;
   toast.innerHTML = `
-    ${type === "success" ? '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' : ""}
-    <span class="text-sm font-medium">${message}</span>
+    ${type === "success" ? '<svg class="w-5 h-5 flex-shrink-0 text-[#ffd700]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' : '<span class="text-amber-400 text-sm">✦</span>'}
+    <span class="text-sm font-semibold">${message}</span>
   `;
 
   container.appendChild(toast);
@@ -1297,3 +1412,364 @@ function slugify(str) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
+
+// ============================================================================
+// 3D Interactive Features, Quick Dock, Tilt Cards & Ambient Particle Engine
+// ============================================================================
+
+function setupCategoryDock() {
+  const dock = document.getElementById("category-nav-dock");
+  if (!dock) return;
+  dock.innerHTML = "";
+
+  MENU.forEach((cat, index) => {
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = `dock-pill ${index === 0 ? "active" : ""}`;
+    pill.dataset.category = cat.category;
+    const icon = CATEGORY_ICONS[cat.category] || "🍽️";
+
+    const count = cat.items.filter((item) => quantities[item.name] > 0).length;
+
+    pill.innerHTML = `
+      <span aria-hidden="true">${icon}</span>
+      <span>${cat.category}</span>
+      <span class="dock-badge ${count > 0 ? "" : "hidden"}">${count}</span>
+    `;
+
+    pill.addEventListener("click", () => {
+      document.querySelectorAll(".dock-pill").forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      scrollPillInDock(pill);
+
+      if (window.Scene3D) {
+        window.Scene3D.setCategoryMood(cat.category);
+        window.Scene3D.triggerBounce();
+      }
+      const label = document.getElementById("mood-category-label");
+      if (label) label.textContent = `${icon} ${cat.category}`;
+
+      const details = document.querySelector(
+        `details.collapsible-category[data-category="${cssEscape(cat.category)}"]`
+      );
+      if (details) {
+        document
+          .querySelectorAll(".collapsible-category[open]")
+          .forEach((d) => {
+            if (d !== details) setCategoryOpen(d, false, { animate: false });
+          });
+        setCategoryOpen(details, true, { animate: true });
+        details.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+
+    dock.appendChild(pill);
+  });
+}
+
+function updateCategoryDockCount(itemName) {
+  let categoryName = "";
+  for (const cat of MENU) {
+    if (cat.items.some((i) => i.name === itemName)) {
+      categoryName = cat.category;
+      break;
+    }
+  }
+  if (!categoryName) return;
+
+  const pill = document.querySelector(`.dock-pill[data-category="${cssEscape(categoryName)}"]`);
+  if (!pill) return;
+
+  const badge = pill.querySelector(".dock-badge");
+  if (!badge) return;
+
+  const count = MENU.find((c) => c.category === categoryName).items.filter(
+    (item) => quantities[item.name] > 0
+  ).length;
+
+  badge.textContent = count;
+  if (count > 0) {
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+function setupFilterChips() {
+  const chips = document.querySelectorAll(".filter-chip");
+  if (!chips.length) return;
+
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chips.forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+
+      const filter = chip.dataset.filter;
+      const categories = document.querySelectorAll(".collapsible-category");
+      let firstOpen = false;
+
+      categories.forEach((cat) => {
+        const catName = cat.dataset.category || "";
+        let match = false;
+
+        if (filter === "all") {
+          match = true;
+        } else if (filter === "coffee") {
+          match = catName.includes("Coffee") || catName.includes("Frappes");
+        } else if (filter === "shakes") {
+          match = catName.includes("Shakes") || catName.includes("Desserts") || catName.includes("Chocolate");
+        } else if (filter === "food") {
+          match = ["Pizza", "Rice", "Burgers", "Fries", "Pasta", "Salad", "Rolls", "Sandwiches", "Combos"].includes(catName);
+        } else if (filter === "coolers") {
+          match = catName.includes("Coolers") || catName.includes("Juices");
+        }
+
+        cat.classList.toggle("hidden", !match);
+        if (match && !firstOpen) {
+          setCategoryOpen(cat, true, { animate: true });
+          firstOpen = true;
+          if (window.Scene3D) {
+            window.Scene3D.setCategoryMood(catName);
+          }
+          const label = document.getElementById("mood-category-label");
+          if (label) label.textContent = `${CATEGORY_ICONS[catName] || "🍽️"} ${catName}`;
+        } else if (match) {
+          setCategoryOpen(cat, false, { animate: false });
+        }
+      });
+    });
+  });
+}
+
+function setupItemRowTilt() {
+  if (prefersReducedMotion()) return;
+  const rows = document.querySelectorAll(".menu-item-row");
+  rows.forEach((row) => {
+    row.addEventListener("mousemove", (e) => {
+      const rect = row.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const rotateX = ((y - centerY) / centerY) * -5;
+      const rotateY = ((x - centerX) / centerX) * 5;
+
+      row.style.setProperty("--rx", `${rotateX.toFixed(2)}deg`);
+      row.style.setProperty("--ry", `${rotateY.toFixed(2)}deg`);
+      row.style.setProperty("--mx", `${x.toFixed(1)}px`);
+      row.style.setProperty("--my", `${y.toFixed(1)}px`);
+    });
+
+    row.addEventListener("mouseleave", () => {
+      row.style.setProperty("--rx", "0deg");
+      row.style.setProperty("--ry", "0deg");
+    });
+  });
+}
+
+function setup3DToolbar() {
+  const soundBtn = document.getElementById("sound-toggle-btn");
+  const iconOn = document.getElementById("sound-icon-on");
+  const iconOff = document.getElementById("sound-icon-off");
+
+  if (soundBtn && iconOn && iconOff) {
+    soundBtn.addEventListener("click", () => {
+      if (window.Scene3D) {
+        const isEnabled = window.Scene3D.toggleSound();
+        if (isEnabled) {
+          iconOn.classList.remove("hidden");
+          iconOff.classList.add("hidden");
+          window.Scene3D.playSound("pop");
+          showToast("Sound effects enabled", "info");
+        } else {
+          iconOn.classList.add("hidden");
+          iconOff.classList.remove("hidden");
+          showToast("Sound effects muted", "info");
+        }
+      }
+    });
+  }
+
+  const spinBtn = document.getElementById("spin-cup-btn");
+  if (spinBtn) {
+    spinBtn.addEventListener("click", () => {
+      if (window.Scene3D) {
+        window.Scene3D.triggerBounce();
+      }
+      if (window.confetti && !prefersReducedMotion()) {
+        const rect = spinBtn.getBoundingClientRect();
+        window.confetti({
+          particleCount: 22,
+          spread: 50,
+          origin: {
+            x: (rect.left + rect.width / 2) / window.innerWidth,
+            y: (rect.top + rect.height / 2) / window.innerHeight,
+          },
+          colors: ["#2D5A27", "#F59E0B", "#F5F0E8"],
+        });
+      }
+    });
+  }
+
+  const glanceCheckout = document.getElementById("glance-checkout-btn");
+  if (glanceCheckout) {
+    glanceCheckout.addEventListener("click", () => {
+      const orderSummary = document.getElementById("order-total-section");
+      if (orderSummary) {
+        orderSummary.scrollIntoView({ behavior: "smooth" });
+      }
+    });
+  }
+}
+
+function setupKeyboardShortcuts() {
+  window.addEventListener("keydown", (e) => {
+    const searchInput = document.getElementById("menu-search");
+    if (!searchInput) return;
+
+    if (e.key === "/" && document.activeElement !== searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    } else if (e.key === "Escape" && document.activeElement === searchInput) {
+      searchInput.value = "";
+      searchInput.dispatchEvent(new Event("input"));
+      searchInput.blur();
+    }
+  });
+}
+
+function setupAmbientParticles() {
+  const canvas = document.getElementById("ambient-particles-canvas");
+  if (!canvas || prefersReducedMotion()) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  let width = (canvas.width = window.innerWidth);
+  let height = (canvas.height = window.innerHeight);
+
+  window.addEventListener("resize", () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  });
+
+  const particles = [];
+  const COUNT = 30;
+
+  for (let i = 0; i < COUNT; i++) {
+    particles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      radius: 1.5 + Math.random() * 2.5,
+      speedX: (Math.random() - 0.5) * 0.3,
+      speedY: -0.15 - Math.random() * 0.35,
+      alpha: 0.15 + Math.random() * 0.3,
+      fadeSpeed: 0.003 + Math.random() * 0.004,
+      hue: 35 + Math.random() * 15,
+    });
+  }
+
+  function renderParticles() {
+    ctx.clearRect(0, 0, width, height);
+
+    particles.forEach((p) => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+      p.alpha += p.fadeSpeed;
+
+      if (p.alpha > 0.45 || p.alpha < 0.1) {
+        p.fadeSpeed = -p.fadeSpeed;
+      }
+
+      if (p.y < -10) {
+        p.y = height + 10;
+        p.x = Math.random() * width;
+      }
+      if (p.x < -10) p.x = width + 10;
+      if (p.x > width + 10) p.x = -10;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 80%, 65%, ${Math.max(0, p.alpha)})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(renderParticles);
+  }
+
+  requestAnimationFrame(renderParticles);
+}
+
+function updateDesktopGlance() {
+  const glanceContainer = document.getElementById("desktop-order-glance");
+  const badge = document.getElementById("glance-item-badge");
+  const price = document.getElementById("glance-total-price");
+  if (!glanceContainer || !badge || !price) return;
+
+  let count = 0;
+  let subtotal = 0;
+  Object.entries(quantities).forEach(([name, qty]) => {
+    if (qty > 0) {
+      count += qty;
+      const item = MENU.flatMap((c) => c.items).find((i) => i.name === name);
+      if (item) {
+        const itemTotal = item.price * qty;
+        const addonTotal = (selectedAddons[name] || []).reduce(
+          (sum, addon) => sum + addon.price * qty,
+          0,
+        );
+        subtotal += itemTotal + addonTotal;
+      }
+    }
+  });
+
+  const total = Math.round(subtotal * 1.05);
+  badge.textContent = `${count} item${count !== 1 ? "s" : ""}`;
+  price.textContent = `₹${total}`;
+
+  if (count > 0) {
+    glanceContainer.classList.remove("opacity-60");
+  } else {
+    glanceContainer.classList.add("opacity-60");
+  }
+}
+
+function setupDockScrollSpy() {
+  const categories = document.querySelectorAll(".collapsible-category");
+  if (!categories.length || !("IntersectionObserver" in window)) return;
+
+  const spyObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.2) {
+          const categoryName = entry.target.dataset.category;
+          if (!categoryName) return;
+
+          document.querySelectorAll(".dock-pill").forEach((pill) => {
+            if (pill.dataset.category === categoryName) {
+              pill.classList.add("active");
+              // Safely scroll only the dock horizontal bar without touching window scroll!
+              scrollPillInDock(pill);
+            } else {
+              pill.classList.remove("active");
+            }
+          });
+
+          if (window.Scene3D) {
+            window.Scene3D.setCategoryMood(categoryName);
+          }
+          const label = document.getElementById("mood-category-label");
+          if (label) {
+            const icon = CATEGORY_ICONS[categoryName] || "🍽️";
+            label.textContent = `${icon} ${categoryName}`;
+          }
+        }
+      });
+    },
+    { threshold: [0.2, 0.4] }
+  );
+
+  categories.forEach((cat) => spyObserver.observe(cat));
+}
+
+

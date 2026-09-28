@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/dist/tailwind.css --minify && cat ./public/dist/tailwind.css ./public/styles.css > ./public/dist/output.css"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.0",
@@ -13,5 +14,8 @@
     "express": "^4.18.2",
     "socket.io": "^4.8.3",
     "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
   }
 }

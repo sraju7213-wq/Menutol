@@ -19,6 +19,18 @@
     {
       "use": "@vercel/static",
       "src": "public/styles.css"
+    },
+    {
+      "use": "@vercel/static",
+      "src": "public/scene3d.js"
+    },
+    {
+      "use": "@vercel/static",
+      "src": "public/dist/**/*"
+    },
+    {
+      "use": "@vercel/static",
+      "src": "public/libs/**/*"
     }
   ],
   "routes": [
